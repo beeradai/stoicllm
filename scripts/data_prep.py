@@ -25,26 +25,36 @@ def clean_text(s: str) -> str:
     s = RE_PROMPT.sub(' ', s)
     return s
 
-def build_pairs_from_text(text: str):
+def build_pairs_from_text(text: str, model_name: str = "mistralai/Mixtral-8x7B-Instruct-v0.1"):
     # Naive heuristic: split into paragraphs and create Q/A style pairs
-    paras = [p.strip() for p in text.split('\n\n') if len(p.strip())>20]
+    paras = [p.strip() for p in text.split('\n\n') if len(p.strip()) > 20]
     pairs = []
     for p in paras:
         cp = clean_text(p)
-        # create two flavors: quote item + short reflection
-        prompt = "Provide a brief Stoic reflection on the following quote:\n\n" + cp
-        response = cp + "\n\nReflection: Consider what is within your control. Ask: what is my duty here?"
-        pairs.append({"prompt": prompt, "response": response})
+
+        user_prompt = f"Provide a brief Stoic reflection on the following quote:\n\n{cp}"
+        answer = f"{cp}\n\nReflection: Consider what is within your control. Ask: what is my duty here?"
+
+        # --- Model-specific formatting ---
+        if "mixtral" in model_name.lower() or "mistral" in model_name.lower():
+            formatted = f"[INST] {user_prompt} [/INST] {answer}"
+        elif "llama" in model_name.lower():
+            formatted = f"<s>[INST] {user_prompt} [/INST] {answer}</s>"
+        else:
+            formatted = user_prompt + "\n\n" + answer
+
+        pairs.append({"prompt": user_prompt, "response": answer, "text": formatted})
     return pairs
 
-def main(input_dir, output_dir, min_examples=200):
+
+def main(input_dir, output_dir, min_examples=200, model_name="mistralai/Mixtral-8x7B-Instruct-v0.1"):
     files = glob(os.path.join(input_dir, '*'))
     out = []
     for f in files:
         try:
             with open(f, 'r', encoding='utf-8') as fh:
                 txt = fh.read()
-            pairs = build_pairs_from_text(txt)
+            pairs = build_pairs_from_text(txt, model_name)
             out.extend(pairs)
         except Exception as e:
             print(f"skipping {f}: {e}")

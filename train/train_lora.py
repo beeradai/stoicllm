@@ -27,9 +27,13 @@ args = parse_args()
 raw = load_dataset('json', data_files={'train': args.data_path})
 
 def build_text(example):
-    # For causal LM, concatenate prompt + response
-    out = example['prompt'] + '\n\n' + example['response']
-    return {'text': out}
+    user_prompt = example['prompt']
+    answer = example['response']
+
+    # Mixtral / Mistral Instruct format
+    return {
+        "text": f"[INST] {user_prompt} [/INST] {answer}"
+    }
 
 raw = raw['train'].map(build_text)
 
