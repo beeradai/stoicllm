@@ -13,7 +13,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument('--model_name', default='meta-llama/Llama-2-7b-chat')
+    p.add_argument('--model_name', default='mistralai/Mixtral-8x7B-Instruct-v0.1')
     p.add_argument('--data_path', required=True)
     p.add_argument('--output_dir', required=True)
     p.add_argument('--num_train_epochs', type=int, default=3)
