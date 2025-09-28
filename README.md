@@ -43,7 +43,11 @@ accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.
 5. Quick deploy (local):
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
+# Windows
+uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2
+
+# Linux
+gunicorn -k uvicorn.workers.UvicornWorker app:app -w 2 -b 0.0.0.0:8000
 ```
 Sample request to above server:
 ```bash
@@ -63,7 +67,7 @@ docker build \
   --build-arg REQ_FILE=requirements.txt \
   -t stoicllm-cpu .
 ```
-Cloud gpu-based
+Local gpu-based
 ```bash
 docker build \
   --build-arg BASE_IMAGE=pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime \
@@ -75,7 +79,7 @@ Local cpu-based
 ```bash
 docker run -it --rm -p 8000:8000 stoicllm-cpu
 ```
-Cloud gpu-based
+Local gpu-based or on a standalone ec2 (requires additional config to ec2 before running):
 ```bash
 docker run -it --rm --gpus all -p 8000:8000 stoicllm-gpu
 ```
