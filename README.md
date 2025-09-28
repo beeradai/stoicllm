@@ -43,7 +43,7 @@ accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.
 5. Quick deploy (local):
 
 ```bash
-python deploy/app.py --model_dir outputs/stoic-lora --port 8000
+python deploy/app.py --model_dir outputs/stoic-gpt2 --port 8000
 ```
 
 Notes:
