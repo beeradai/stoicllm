@@ -43,7 +43,13 @@ accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.
 5. Quick deploy (local):
 
 ```bash
-python deploy/app.py --model_dir outputs/stoic-gpt2 --port 8000
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+Sample request to above server:
+```bash
+curl -X POST "http://127.0.0.1:8000/generate" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"What is the Stoic view of fear?", "max_length":100}'
 ```
 
 Notes:
