@@ -1,0 +1,6 @@
+model_name: gpt2
+data_path: data/processed/train.jsonl
+output_dir: outputs/stoic-gpt2
+per_device_train_batch_size: 1
+num_train_epochs: 1
+learning_rate: 5e-5

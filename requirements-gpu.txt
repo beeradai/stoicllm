@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# bitsandbytes only works with NVIDIA CUDA
+bitsandbytes==0.41.3
