@@ -51,6 +51,34 @@ curl -X POST "http://127.0.0.1:8000/generate" \
   -H "Content-Type: application/json" \
   -d '{"prompt":"What is the Stoic view of fear?", "max_length":100}'
 ```
+Swagger docs:
+```bash
+http://127.0.0.1:8000/docs
+```
+6. Docker build:
+Local cpu-based
+```bash
+docker build \
+  --build-arg BASE_IMAGE=python:3.10-slim \
+  --build-arg REQ_FILE=requirements.txt \
+  -t stoicllm-cpu .
+```
+Cloud gpu-based
+```bash
+docker build \
+  --build-arg BASE_IMAGE=pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime \
+  --build-arg REQ_FILE=requirements-gpu.txt \
+  -t stoicllm-gpu .
+```
+7. Docker deploy:
+Local cpu-based
+```bash
+docker run -it --rm -p 8000:8000 stoicllm-cpu
+```
+Cloud gpu-based
+```bash
+docker run -it --rm --gpus all -p 8000:8000 stoicllm-gpu
+```
 
 Notes:
 - This repo demonstrates a LoRA workflow; it uses 4-bit loading to reduce GPU memory requirements.

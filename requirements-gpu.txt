@@ -1,4 +1,33 @@
--r requirements.txt
+safetensors
+huggingface_hub
+uvicorn
+python-multipart
+protobuf
+hf_xet
+numpy
+mkl-static 
+mkl-include
 
-# bitsandbytes only works with NVIDIA CUDA
-bitsandbytes==0.41.3
+# Utilities
+tqdm
+sentencepiece
+scipy
+
+# Core deep learning stack (CPU-compatible)
+torch
+torchvision
+torchaudio
+
+# Hugging Face ecosystem
+transformers==4.36.2
+peft==0.7.1
+accelerate==0.21.0
+datasets==2.15.0
+
+# Serving
+fastapi
+uvicorn[standard]
+gunicorn
+
+# GPU build of PyTorch + CUDA 12.1
+torch==2.1.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121

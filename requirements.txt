@@ -1,7 +1,6 @@
 safetensors
 huggingface_hub
 uvicorn
-fastapi
 python-multipart
 protobuf
 hf_xet
@@ -25,8 +24,10 @@ peft==0.7.1
 accelerate==0.21.0
 datasets==2.15.0
 
-# Utilities
-tqdm
-sentencepiece
-scipy
+# Serving
+fastapi
+uvicorn[standard]
+gunicorn
 
+# CPU-safe torch
+torch>=2.1.0 --extra-index-url https://download.pytorch.org/whl/cpu
