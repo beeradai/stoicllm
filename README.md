@@ -8,27 +8,46 @@ Quick start (local or cloud GPU):
 1. Install requirements:
 
 ```bash
+# Local gpt-2
 pip install -r requirements.txt
+
+# Cloud mixtral
+pip install -r requirements-gpu.txt
 ```
 
 2. Put source texts into `data/raw/` (public-domain Stoic texts, essays, etc.). You can use the provided `examples/sample_train.jsonl` for quick tests.
+```bash
+python download_stoic_texts.py
+```
 
 3. Generate processed JSONL dataset:
 
 ```bash
 python scripts/data_prep.py --input_dir data/raw --output data/processed/train.jsonl
 ```
-
-4. Run training (example using `accelerate`):
-
+Or combine steps 2 & 3 with:
 ```bash
-accelerate launch --config_file train/accelerate_config.yaml train/train_lora.py --data_path data/processed/train.jsonl --output_dir outputs/stoic-lora
+python download_and_prep_stoic_texts.py
 ```
 
-5. Evaluate:
+4. Run training & evaluation:
 
 ```bash
-python eval/eval_model.py --model outputs/stoic-lora --data data/processed/valid.jsonl
+# Local gpt-2
+python train/train_lora.py --config_file train/configs/local_gpt2.yaml
+
+# Cloud mixtral
+accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.yaml
+```
+
+5. Run stand-alone evaluation:
+
+```bash
+# Local gpt-2
+python train/eval_lora.py --config_file train/configs/eval_gpt2.yaml
+
+# Cloud mixtral
+accelerate launch train/eval_lora.py --config_file train/configs/eval_mixtral.yaml
 ```
 
 6. Quick deploy (local):
@@ -38,6 +57,6 @@ python deploy/app.py --model_dir outputs/stoic-lora --port 8000
 ```
 
 Notes:
-- This repo demonstrates a LoRA workflow; it uses 8-bit loading to reduce GPU memory requirements.
+- This repo demonstrates a LoRA workflow; it uses 4-bit loading to reduce GPU memory requirements.
 - Use only public-domain texts or content you have rights to.
 - The included scripts are intentionally simple to be easy to modify for production usage.
