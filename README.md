@@ -22,7 +22,7 @@ python scripts/data_prep.py --input_dir data/raw --output data/processed/train.j
 4. Run training (example using `accelerate`):
 
 ```bash
-accelerate launch train/train_lora.py --data_path data/processed/train.jsonl --output_dir outputs/stoic-lora
+accelerate launch --config_file train/accelerate_config.yaml train/train_lora.py --data_path data/processed/train.jsonl --output_dir outputs/stoic-lora
 ```
 
 5. Evaluate:
