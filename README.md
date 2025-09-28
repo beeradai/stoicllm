@@ -40,17 +40,7 @@ python train/train_lora.py --config_file train/configs/local_gpt2.yaml
 accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.yaml
 ```
 
-5. Run stand-alone evaluation:
-
-```bash
-# Local gpt-2
-python train/eval_lora.py --config_file train/configs/eval_gpt2.yaml
-
-# Cloud mixtral
-accelerate launch train/eval_lora.py --config_file train/configs/eval_mixtral.yaml
-```
-
-6. Quick deploy (local):
+5. Quick deploy (local):
 
 ```bash
 python deploy/app.py --model_dir outputs/stoic-lora --port 8000
