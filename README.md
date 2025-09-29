@@ -40,7 +40,17 @@ python train/train_lora.py --config_file train/configs/local_gpt2.yaml
 accelerate launch train/train_lora.py --config_file train/configs/cloud_mixtral.yaml
 ```
 
-5. Quick deploy (local):
+5. Run inference:
+
+```bash
+# Local gpt-2
+BASE_MODEL=gpt2 MODEL_PATH=outputs/stoic-gpt2 python inference/inference.py
+
+# Cloud mixtral
+BASE_MODEL=mistralai/Mixtral-8x7B-Instruct-v0.1 MODEL_PATH=outputs/stoic-mixtral python inference/inference.py
+```
+
+6. Quick deploy (local):
 
 ```bash
 # Windows
