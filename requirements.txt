@@ -21,7 +21,7 @@ torchaudio
 # Hugging Face ecosystem
 transformers==4.36.2
 peft==0.7.1
-accelerate==0.21.0
+accelerate==0.25.0
 datasets==2.15.0
 
 # Serving

@@ -1,108 +1,98 @@
 import os
-import requests
+import re
 import json
 import random
+import requests
 
-# Gutenberg plain-text URLs (public domain)
-TEXTS = {
-    "aurelius_meditations.txt": "https://www.gutenberg.org/files/2680/2680-0.txt",
-    "epictetus_enchiridion.txt": "https://www.gutenberg.org/files/45109/45109-0.txt",
-    "epictetus_discourses.txt": "https://www.gutenberg.org/files/54632/54632-0.txt",
-    "seneca_letters.txt": "https://www.gutenberg.org/files/56565/56565-0.txt"
+RAW_DIR = "data/raw"
+PROCESSED_DIR = "data/processed"
+TRAIN_FILE = os.path.join(PROCESSED_DIR, "train.jsonl")
+VALID_FILE = os.path.join(PROCESSED_DIR, "valid.jsonl")
+
+# Example public domain sources
+STOIC_TEXTS = {
+    "meditations.txt": "https://www.gutenberg.org/cache/epub/2680/pg2680.txt",  # Marcus Aurelius - Meditations
+    "enchiridion.txt": "https://www.gutenberg.org/cache/epub/45109/pg45109.txt",  # Epictetus - Enchiridion
+    "seneca_letters.txt": "https://www.gutenberg.org/cache/epub/56376/pg56376.txt",  # Seneca - Letters
+    "epictetus_discourses.txt": "https://www.gutenberg.org/files/54632/54632-0.txt", # Epictetus - Discourses
 }
 
-RAW_DIR = os.path.join("data", "raw")
-PROC_DIR = os.path.join("data", "processed")
-os.makedirs(RAW_DIR, exist_ok=True)
-os.makedirs(PROC_DIR, exist_ok=True)
+def download_texts():
+    """Download Stoic texts into data/raw if not already present."""
+    os.makedirs(RAW_DIR, exist_ok=True)
+
+    for filename, url in STOIC_TEXTS.items():
+        path = os.path.join(RAW_DIR, filename)
+        if not os.path.exists(path):
+            print(f"Downloading {filename} from {url} ...")
+            response = requests.get(url)
+            response.raise_for_status()
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(response.text)
+        else:
+            print(f"Found existing {filename}, skipping download.")
 
 
-def clean_gutenberg_text(raw_text: str) -> str:
-    """Remove Gutenberg header/footer boilerplate."""
-    start_marker = "*** START OF THIS PROJECT GUTENBERG"
-    end_marker = "*** END OF THIS PROJECT GUTENBERG"
+def clean_line(line: str) -> str:
+    """Remove boilerplate, headers, and unwanted patterns."""
+    line = line.strip()
 
-    start_idx = raw_text.find(start_marker)
-    if start_idx != -1:
-        raw_text = raw_text[start_idx + len(start_marker):]
+    # Skip empty or very short lines
+    if len(line) < 40:
+        return ""
 
-    end_idx = raw_text.find(end_marker)
-    if end_idx != -1:
-        raw_text = raw_text[:end_idx]
+    # Remove Project Gutenberg mentions
+    if "gutenberg" in line.lower():
+        return ""
 
-    return raw_text.strip()
+    # Remove chapter/letter/book headings
+    if re.match(r"^(chapter|book|letter)\b", line.lower()):
+        return ""
 
+    # Skip lines with only numbers or Roman numerals
+    if re.match(r"^[ivxlcdm0-9]+$", line.lower()):
+        return ""
 
-def download_and_clean(name: str, url: str):
-    print(f"Downloading {name} from {url} ...")
-    r = requests.get(url)
-    if r.status_code != 200:
-        print(f"Failed to fetch {url}")
-        return None
+    # Keep moderately sized sentences (avoid huge blocks)
+    if len(line) > 500:
+        return ""
 
-    clean_text = clean_gutenberg_text(r.text)
-
-    out_path = os.path.join(RAW_DIR, name)
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write(clean_text)
-
-    print(f"Saved {name} - {out_path}")
-    return out_path
+    return line
 
 
-def build_pairs_from_text(text: str):
-    """Create simple Q/A pairs in Mixtral format."""
-    paras = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 40]
-    pairs = []
-    for p in paras:
-        user_prompt = f"Provide a Stoic reflection on this passage:\n\n{p}"
-        answer = f"{p}\n\nReflection: Focus only on what is within your control."
-        formatted = f"[INST] {user_prompt} [/INST] {answer}"
+def build_dataset(input_files, train_file, val_file, split_ratio=0.9):
+    """Convert raw Stoic texts into a cleaned JSONL dataset with train/val split."""
+    os.makedirs(os.path.dirname(train_file), exist_ok=True)
 
-        pairs.append({
-            "prompt": user_prompt,
-            "response": answer,
-            "text": formatted
-        })
-    return pairs
+    records = []
+    for f in input_files:
+        with open(f, "r", encoding="utf-8") as inp:
+            text = inp.read().splitlines()
+            for line in text:
+                cleaned = clean_line(line)
+                if cleaned:
+                    records.append({"prompt": "Stoic Reflection:", "completion": cleaned})
 
+    random.shuffle(records)
+    split_idx = int(len(records) * split_ratio)
+    train_records = records[:split_idx]
+    val_records = records[split_idx:]
 
-def prepare_dataset():
-    all_pairs = []
-    for fname in os.listdir(RAW_DIR):
-        fpath = os.path.join(RAW_DIR, fname)
-        with open(fpath, "r", encoding="utf-8") as f:
-            txt = f.read()
-        pairs = build_pairs_from_text(txt)
-        all_pairs.extend(pairs)
+    with open(train_file, "w", encoding="utf-8") as f:
+        for r in train_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    print(f"Built {len(all_pairs)} Q/A pairs.")
+    with open(val_file, "w", encoding="utf-8") as f:
+        for r in val_records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    # Shuffle and split
-    random.shuffle(all_pairs)
-    n = len(all_pairs)
-    train, valid, test = (
-        all_pairs[: int(0.8 * n)],
-        all_pairs[int(0.8 * n): int(0.9 * n)],
-        all_pairs[int(0.9 * n):]
-    )
-
-    # Save JSONL
-    for split, data in [("train", train), ("valid", valid), ("test", test)]:
-        out_path = os.path.join(PROC_DIR, f"{split}.jsonl")
-        with open(out_path, "w", encoding="utf-8") as f:
-            for ex in data:
-                f.write(json.dumps(ex, ensure_ascii=False) + "\n")
-        print(f"Wrote {len(data)} examples - {out_path}")
-
-
-def main():
-    for fname, url in TEXTS.items():
-        download_and_clean(fname, url)
-
-    prepare_dataset()
-    print("All done! Dataset ready in data/processed/")
+    print(f"Dataset built: {len(train_records)} train / {len(val_records)} val examples")
 
 
 if __name__ == "__main__":
-    main()
+    print("Preparing Stoic texts...")
+    download_texts()
+
+    input_files = [os.path.join(RAW_DIR, f) for f in STOIC_TEXTS.keys()]
+    build_dataset(input_files, TRAIN_FILE, VALID_FILE)
+
